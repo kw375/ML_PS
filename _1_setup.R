@@ -388,7 +388,8 @@ fun_itt_gbm <- function(df,
   
   
   if(coxHR) {
-    fit.itt.hr <- glm(event == 1 ~ exp + ns(time, knots = c(6, 12, 24)),
+    fit.itt.hr <- glm(event == 1 ~ exp + # Cardiomyopathy_BL + RX_Diuretics_BL + UserType + ns(trial_num, 3) +   # <== doubly robust adjustment
+                      ns(time, knots = c(6, 12, 24)),
                       family = "quasibinomial", data = df.itt,
                       weights = IPTW_gbm)
     
@@ -402,6 +403,7 @@ fun_itt_gbm <- function(df,
   }  else {
     
     fit.itt.risk <- glm(event == 1 ~ exp + ns(time, knots = c(6, 12, 24)) + 
+                        # Cardiomyopathy_BL + RX_Diuretics_BL + UserType + ns(trial_num, 3) +      # <== doubly robust adjustment
                           exp*ns(time, knots = c(6, 12, 24)),
                         family = "quasibinomial", data = df.itt, 
                         weights = IPTW_gbm, x = FALSE, y = FALSE)  
@@ -409,13 +411,14 @@ fun_itt_gbm <- function(df,
     # create shells
     arm_0 <- data.frame(0, seq(0, 41))
     arm_1 <- data.frame(1, seq(0, 41))
-    # arm_0 <- data.frame(0, seq(0, 41), factor("No"), factor("No"), factor("Prevalent"))
-    # arm_1 <- data.frame(1, seq(0, 41), factor("No"), factor("No"), factor("Prevalent"))
+    # doubly robust adjustment
+    # arm_0 <- data.frame(0, seq(0, 41), factor("No"), factor("No"), factor("Prevalent"), 37.14)
+    # arm_1 <- data.frame(1, seq(0, 41), factor("No"), factor("No"), factor("Prevalent"), 37.14)
     
     colnames(arm_0) <- c("exp", "time")
     colnames(arm_1) <- c("exp", "time")
-    # colnames(arm_0) <- c("exp", "time", "Cardiomyopathy_BL", "RX_Diuretics_BL", "UserType")
-    # colnames(arm_1) <- c("exp", "time", "Cardiomyopathy_BL", "RX_Diuretics_BL", "UserType")
+    # colnames(arm_0) <- c("exp", "time", "Cardiomyopathy_BL", "RX_Diuretics_BL", "UserType", "trial_num")
+    # colnames(arm_1) <- c("exp", "time", "Cardiomyopathy_BL", "RX_Diuretics_BL", "UserType", "trial_num)
     
     # 1 - prob
     arm_0$p_0 <- 1 - predict(fit.itt.risk, arm_0, type = "response")
@@ -580,4 +583,5 @@ fun_cumIncPlot <- function(df,
   
   return(g)
 }
+
 
